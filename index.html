@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>AI Finance Automation — Workflow &amp; Live Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+    background: #f3f2f1;
+    color: #252423;
+  }
+  .app { width: 1300px; margin: 0 auto; box-shadow: 0 0 12px rgba(0,0,0,0.12); background:#fff; }
+
+  .titlebar {
+    background: #16223a; color:#fff; padding: 10px 22px; font-size: 13px;
+    display:flex; justify-content:space-between; align-items:center;
+  }
+  .titlebar .brand { display:flex; align-items:center; gap:10px; font-weight:600; }
+  .brand-dot { width:10px; height:10px; border-radius:50%; background:#39c17c; display:inline-block; box-shadow:0 0 0 3px rgba(57,193,124,0.25); }
+
+  /* ===== WORKFLOW SECTION ===== */
+  .workflow-section { padding: 26px 30px 20px; }
+  .workflow-section h2 { font-size:16px; margin:0 0 3px; font-weight:700; color:#16223a; }
+  .workflow-section .sub { font-size:11.5px; color:#666; margin-bottom:20px; }
+
+  .flow-row { display:flex; align-items:center; justify-content:space-between; gap:6px; }
+  .flow-col { display:flex; flex-direction:column; gap:10px; }
+  .flow-title { font-size:10.5px; text-transform:uppercase; letter-spacing:.04em; color:#8a8886; font-weight:700; text-align:center; margin-bottom:2px; }
+
+  .node {
+    background:#fff; border:1.5px solid #dfe3e8; border-radius:8px; padding:10px 14px;
+    font-size:12px; font-weight:600; color:#252423; box-shadow:0 1px 3px rgba(0,0,0,0.05);
+    display:flex; align-items:center; gap:8px; min-width:150px;
+  }
+  .node .icon { width:22px; height:22px; border-radius:5px; flex:none; display:flex; align-items:center; justify-content:center; font-size:12px; color:#fff; font-weight:700; }
+  .icon-xero { background:#13B5EA; }
+  .icon-odoo { background:#714B67; }
+  .icon-qb { background:#2CA01C; }
+  .icon-bank { background:#5b5b5b; }
+
+  .node.automation { border-color:#f2c811; background:#fffdf5; }
+  .icon-zap { background:#ff4a00; }
+  .icon-make { background:#6d00cc; }
+  .icon-pq { background:#217346; }
+
+  .node.dest { border-color:#39c17c; background:#f4fbf7; }
+  .icon-pbi { background:#f2c811; color:#16223a; }
+  .icon-ai { background:#16223a; }
+
+  .arrow-col { flex:none; display:flex; flex-direction:column; align-items:center; gap:6px; color:#b6bac1; }
+  .arrow-col svg { width:46px; height:18px; }
+  .arrow-label { font-size:9.5px; color:#8a8886; text-align:center; max-width:70px; line-height:1.25; }
+
+  /* ===== DASHBOARD SECTION ===== */
+  .dash-section { background:#faf9f8; padding:22px 30px 30px; border-top:1px solid #edebe9; }
+  .dash-header { display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:16px; }
+  .dash-header h2 { font-size:16px; margin:0 0 3px; font-weight:700; color:#16223a; }
+  .dash-header .sub { font-size:11.5px; color:#666; }
+  .live-pill { background:#eafaf1; color:#107c10; border:1px solid #c8f0d8; font-size:11px; font-weight:600; padding:4px 10px; border-radius:12px; display:flex; align-items:center; gap:6px; }
+  .live-pill .dot2 { width:7px; height:7px; border-radius:50%; background:#107c10; }
+
+  .kpi-row { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:16px; }
+  .kpi-card { background:#fff; border:1px solid #e1dfdd; border-radius:6px; padding:13px 15px; box-shadow:0 1px 2px rgba(0,0,0,0.04); }
+  .kpi-card .label { font-size:10.5px; color:#605e5c; text-transform:uppercase; letter-spacing:.03em; margin-bottom:6px; }
+  .kpi-card .value { font-size:23px; font-weight:700; color:#16223a; }
+  .kpi-card .delta { font-size:11.5px; margin-top:4px; }
+  .delta.good { color:#107c10; }
+
+  .grid2 { display:grid; grid-template-columns: 1.3fr 1fr; gap:14px; }
+  .panel { background:#fff; border:1px solid #e1dfdd; border-radius:6px; padding:15px; box-shadow:0 1px 2px rgba(0,0,0,0.04); }
+  .panel h3 { font-size:12.5px; font-weight:700; margin:0 0 10px; color:#252423; }
+
+  .ai-flag { display:flex; gap:10px; align-items:flex-start; padding:9px 0; border-bottom:1px solid #f3f2f1; }
+  .ai-flag:last-child { border-bottom:none; }
+  .ai-flag .badge { font-size:9.5px; font-weight:700; padding:2px 7px; border-radius:9px; flex:none; margin-top:1px; }
+  .badge.anomaly { background:#fdecea; color:#b3261e; }
+  .badge.saving { background:#fff4ce; color:#8a6d00; }
+  .badge.insight { background:#e8f1fd; color:#1a56c4; }
+  .ai-flag .txt { font-size:11.5px; color:#3b3a39; line-height:1.4; }
+  .ai-flag .txt b { color:#16223a; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="titlebar">
+    <div class="brand"><span class="brand-dot"></span> Finance Automation Control Center</div>
+    <div>Sample data — anonymized, for illustration only</div>
+  </div>
+
+  <!-- WORKFLOW DIAGRAM -->
+  <div class="workflow-section">
+    <h2>How it works — from raw books to live, AI-checked insight</h2>
+    <div class="sub">Accounting systems &nbsp;&#8594;&nbsp; automation layer &nbsp;&#8594;&nbsp; always-on dashboard</div>
+
+    <div class="flow-row">
+      <div class="flow-col">
+        <div class="flow-title">Source systems</div>
+        <div class="node"><span class="icon icon-xero">X</span> Xero</div>
+        <div class="node"><span class="icon icon-odoo">O</span> Odoo</div>
+        <div class="node"><span class="icon icon-qb">Q</span> QuickBooks</div>
+        <div class="node"><span class="icon icon-bank">B</span> Bank feeds</div>
+      </div>
+
+      <div class="arrow-col">
+        <svg viewBox="0 0 46 18"><line x1="2" y1="9" x2="40" y2="9" stroke="#b6bac1" stroke-width="2"/><polygon points="40,4 46,9 40,14" fill="#b6bac1"/></svg>
+        <div class="arrow-label">nightly sync</div>
+      </div>
+
+      <div class="flow-col">
+        <div class="flow-title">Automation layer</div>
+        <div class="node automation"><span class="icon icon-zap">Z</span> Zapier</div>
+        <div class="node automation"><span class="icon icon-make">M</span> Make.com</div>
+        <div class="node automation"><span class="icon icon-pq">PQ</span> Power Query</div>
+        <div class="node automation"><span class="icon icon-ai" style="background:#16223a;">AI</span> Recon &amp; QA rules</div>
+      </div>
+
+      <div class="arrow-col">
+        <svg viewBox="0 0 46 18"><line x1="2" y1="9" x2="40" y2="9" stroke="#b6bac1" stroke-width="2"/><polygon points="40,4 46,9 40,14" fill="#b6bac1"/></svg>
+        <div class="arrow-label">auto-refresh</div>
+      </div>
+
+      <div class="flow-col">
+        <div class="flow-title">Decision layer</div>
+        <div class="node dest"><span class="icon icon-pbi">P</span> Power BI dashboard</div>
+        <div class="node dest"><span class="icon icon-ai">AI</span> Anomaly alerts</div>
+        <div class="node dest"><span class="icon icon-pbi" style="background:#39c17c; color:#fff;">R</span> Auto reports</div>
+        <div class="node dest"><span class="icon icon-pbi" style="background:#5b5b5b; color:#fff;">L</span> Self-updating ledger</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LIVE DASHBOARD -->
+  <div class="dash-section">
+    <div class="dash-header">
+      <div>
+        <h2>Live Finance Dashboard</h2>
+        <div class="sub">Consolidated view &nbsp;•&nbsp; fed automatically from Xero, Odoo &amp; bank feeds &nbsp;•&nbsp; refreshes nightly</div>
+      </div>
+      <div class="live-pill"><span class="dot2"></span> Live — synced 12 min ago</div>
+    </div>
+
+    <div class="kpi-row">
+      <div class="kpi-card"><div class="label">Manual hours saved / mo</div><div class="value">62 hrs</div><div class="delta good">&#9650; from 8 hrs automated in mo 1</div></div>
+      <div class="kpi-card"><div class="label">Bank recon match rate</div><div class="value">97.4%</div><div class="delta good">&#9650; 22pts since automation</div></div>
+      <div class="kpi-card"><div class="label">Reports generated</div><div class="value">100% auto</div><div class="delta good">0 manual builds this month</div></div>
+      <div class="kpi-card"><div class="label">Anomalies caught pre-close</div><div class="value">9</div><div class="delta good">flagged before reporting</div></div>
+    </div>
+
+    <div class="grid2">
+      <div class="panel">
+        <h3>Automated hours reclaimed — by process</h3>
+        <div style="position:relative; height:230px;">
+          <canvas id="hoursChart" role="img" aria-label="Bar chart of monthly hours saved through automation across bank reconciliation, reporting, payroll, and ledger entry"></canvas>
+        </div>
+      </div>
+      <div class="panel">
+        <h3>AI monitoring feed</h3>
+        <div class="ai-flag">
+          <span class="badge anomaly">ANOMALY</span>
+          <div class="txt"><b>Duplicate vendor payment</b> flagged on Account Payable — $1,240 held for review before posting.</div>
+        </div>
+        <div class="ai-flag">
+          <span class="badge insight">INSIGHT</span>
+          <div class="txt"><b>Subscription cost drift</b> — SaaS spend up 14% vs 3-month average, driven by 2 new tools.</div>
+        </div>
+        <div class="ai-flag">
+          <span class="badge saving">EFFICIENCY</span>
+          <div class="txt"><b>Bank recon auto-matched</b> 412 of 423 transactions this week — 11 exceptions routed to review queue.</div>
+        </div>
+        <div class="ai-flag">
+          <span class="badge insight">INSIGHT</span>
+          <div class="txt"><b>Payroll run validated</b> — headcount and gross pay reconciled automatically against HRIS export.</div>
+        </div>
+        <div class="ai-flag">
+          <span class="badge anomaly">ANOMALY</span>
+          <div class="txt"><b>Unusual expense category spike</b> — travel costs 2.3x prior month, routed for manager sign-off.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+new Chart(document.getElementById('hoursChart'), {
+  type: 'bar',
+  data: {
+    labels: ['Bank recon','Reporting','Payroll','Ledger entry','Month-end close'],
+    datasets: [{
+      label: 'Hours saved / month',
+      data: [18, 16, 10, 9, 9],
+      backgroundColor: '#16223a',
+      borderRadius: 4,
+      barThickness: 30
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      y: { beginAtZero: true, grid: { color: '#eee' }, title: { display: true, text: 'hrs / month', font: { size: 10 } } },
+      x: { grid: { display: false } }
+    }
+  }
+});
+</script>
+</body>
+</html>
